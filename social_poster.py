@@ -2,6 +2,7 @@
 import tweepy
 from datetime import datetime
 import json
+from config import Config  # Add this import
 
 class SocialMediaPoster:
     def __init__(self):
@@ -9,8 +10,19 @@ class SocialMediaPoster:
         self._setup_platforms()
     
     def _setup_platforms(self):
-        # Setup Twitter/X
+        # Setup Twitter/X with v2 API
         try:
+            # Create v2 client (recommended for free tier)
+            self.platforms['twitter'] = tweepy.Client(
+                bearer_token=Config.TWITTER_BEARER_TOKEN,
+                consumer_key=Config.TWITTER_API_KEY,
+                consumer_secret=Config.TWITTER_API_SECRET,
+                access_token=Config.TWITTER_ACCESS_TOKEN,
+                access_token_secret=Config.TWITTER_ACCESS_SECRET
+            )
+            print("✓ Twitter connected (v2 API)")
+            
+            # Keep v1.1 API for features not in v2 (optional)
             auth = tweepy.OAuthHandler(
                 Config.TWITTER_API_KEY, 
                 Config.TWITTER_API_SECRET
@@ -19,8 +31,8 @@ class SocialMediaPoster:
                 Config.TWITTER_ACCESS_TOKEN, 
                 Config.TWITTER_ACCESS_SECRET
             )
-            self.platforms['twitter'] = tweepy.API(auth)
-            print("✓ Twitter connected")
+            self.platforms['twitter_v1'] = tweepy.API(auth)
+            
         except Exception as e:
             print(f"✗ Twitter connection failed: {e}")
     
@@ -34,7 +46,7 @@ class SocialMediaPoster:
         }
     
     def post_to_twitter(self, post):
-        """Post to Twitter/X with 280 character limit"""
+        """Post to Twitter/X with 280 character limit using v2 API"""
         try:
             # Format for Twitter
             tweet = f"{post['title']}\n\n{post['content'][:200]}...\n\n{post['url']}"
@@ -43,12 +55,18 @@ class SocialMediaPoster:
             if len(tweet) > 280:
                 tweet = f"{post['title'][:100]}...\n\n{post['url']}"
             
-            # Post tweet
-            response = self.platforms['twitter'].update_status(tweet)
-            return {'success': True, 'id': response.id}
+            # Post tweet using v2 API
+            response = self.platforms['twitter'].create_tweet(text=tweet)
+            
+            # Extract tweet ID from response
+            tweet_id = response.data['id'] if response.data else None
+            
+            return {'success': True, 'id': tweet_id, 'text': tweet}
         
-        except Exception as e:
+        except tweepy.TweepyException as e:
             return {'success': False, 'error': str(e)}
+        except Exception as e:
+            return {'success': False, 'error': f"Unexpected error: {str(e)}"}
     
     def post_to_all(self, title, content, url):
         """Post to all configured platforms"""
@@ -59,5 +77,32 @@ class SocialMediaPoster:
             results['twitter'] = self.post_to_twitter(post)
         
         # Add more platforms here
+        # if 'linkedin' in self.platforms:
+        #     results['linkedin'] = self.post_to_linkedin(post)
         
         return results
+    
+    def get_recent_tweets(self, count=5):
+        """Get recent tweets (example of using the API)"""
+        try:
+            # Get authenticated user's ID
+            me = self.platforms['twitter'].get_me()
+            user_id = me.data.id
+            
+            # Get recent tweets
+            tweets = self.platforms['twitter'].get_users_tweets(
+                id=user_id, 
+                max_results=count
+            )
+            
+            return {'success': True, 'tweets': tweets.data}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def delete_tweet(self, tweet_id):
+        """Delete a tweet by ID"""
+        try:
+            self.platforms['twitter'].delete_tweet(id=tweet_id)
+            return {'success': True}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
