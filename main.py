@@ -1,48 +1,85 @@
-# main.py
 from social_poster import SocialMediaPoster
-import schedule
-import time
+import json
+import sys
 
-def main():
+def post_from_queue():
+    """Post the next item from content queue"""
     poster = SocialMediaPoster()
     
-    # Example: Post a blog article
+    # Load content queue
+    try:
+        with open('content_queue.json', 'r') as f:
+            posts = json.load(f)
+    except FileNotFoundError:
+        print("❌ content_queue.json not found!")
+        return
+    except json.JSONDecodeError:
+        print("❌ content_queue.json is not valid JSON!")
+        return
+    
+    if not posts:
+        print("📭 No posts in queue!")
+        return
+    
+    # Get the first post
+    next_post = posts[0]
+    
+    print(f"📤 Posting: {next_post['title']}")
+    
+    # Post to all platforms
     results = poster.post_to_all(
-        title="My Latest Blog Post: Python Tips",
-        content="Here are 5 Python tips that will save you hours of coding time...",
-        url="https://yourblog.com/python-tips"
+        title=next_post['title'],
+        content=next_post['content'],
+        url=next_post['url']
     )
     
-    print("Posting results:", results)
+    # Show results
+    all_success = True
+    for platform, result in results.items():
+        if result['success']:
+            print(f"✅ {platform}: Posted successfully!")
+        else:
+            print(f"❌ {platform}: {result['error']}")
+            all_success = False
+    
+    # If posted successfully, remove from queue
+    if all_success:
+        posts.pop(0)
+        with open('content_queue.json', 'w') as f:
+            json.dump(posts, f, indent=2)
+        print(f"✅ Removed from queue. {len(posts)} posts remaining.")
+    else:
+        print("⚠️  Post kept in queue due to errors.")
 
-def scheduled_post():
-    """Example of scheduled posting"""
+def post_single(title, content, url):
+    """Post a single item directly"""
     poster = SocialMediaPoster()
     
-    # Read from a content queue file
-    with open('content_queue.json', 'r') as f:
-        posts = json.load(f)
+    print(f"📤 Direct posting: {title}")
     
-    if posts:
-        next_post = posts.pop(0)
-        results = poster.post_to_all(**next_post)
-        print(f"Posted: {next_post['title']}")
-        
-        # Save remaining posts
-        with open('content_queue.json', 'w') as f:
-            json.dump(posts, f)
+    results = poster.post_to_all(title=title, content=content, url=url)
+    
+    for platform, result in results.items():
+        if result['success']:
+            print(f"✅ {platform}: Posted successfully!")
+        else:
+            print(f"❌ {platform}: {result['error']}")
+
+def main():
+    """Main entry point"""
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "queue":
+            post_from_queue()
+        elif sys.argv[1] == "test":
+            # Test post
+            post_single(
+                "Post",
+                "My multi-platform poster",
+                "https://carlosruizviquezinformationtechnology.blogspot.com/2025/09/about-dr-carlos-ruiz-viquez.html"
+            )
+    else:
+        # Default: post from queue
+        post_from_queue()
 
 if __name__ == "__main__":
-    # Run once
     main()
-    
-    # Or schedule posts
-    # schedule.every().day.at("09:00").do(scheduled_post)
-    # schedule.every().day.at("15:00").do(scheduled_post)
-    # 
-    # while True:
-    #     schedule.run_pending()
-
-  
-  
-  #     time.sleep(60)
