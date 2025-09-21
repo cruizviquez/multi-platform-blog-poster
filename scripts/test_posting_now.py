@@ -1,5 +1,5 @@
-from expert_content_generator import ExpertContentGenerator
-from social_poster import SocialMediaPoster
+from core.expert_content_generator import ExpertContentGenerator
+from core.social_poster import SocialMediaPoster
 import json
 
 def test_immediate_post():

@@ -1,7 +1,7 @@
 import time
 import json
 from datetime import datetime
-from social_poster import SocialMediaPoster
+from core.social_poster import SocialMediaPoster
 
 def load_expert_queue():
     """Load posts from expert queue"""

@@ -3,7 +3,7 @@ import schedule
 import time
 import json
 from datetime import datetime
-from social_poster import SocialMediaPoster
+from core.social_poster import SocialMediaPoster
 
 class ContentScheduler:
     def __init__(self, queue_file='content_queue.json'):
