@@ -22,7 +22,7 @@ class SocialMediaPoster:
         except Exception as e:
             print(f"✗ Twitter connection failed: {e}")
         
-        # Setup LinkedIn - only if credentials exist
+        # Setup LinkedIn
         if hasattr(Config, 'LINKEDIN_ACCESS_TOKEN') and Config.LINKEDIN_ACCESS_TOKEN:
             self.platforms['linkedin'] = {
                 'token': Config.LINKEDIN_ACCESS_TOKEN,
@@ -31,6 +31,16 @@ class SocialMediaPoster:
             print("✓ LinkedIn connected")
         else:
             print("ℹ️  LinkedIn not configured (no credentials)")
+        
+        # Setup Facebook
+        if hasattr(Config, 'FACEBOOK_ACCESS_TOKEN') and Config.FACEBOOK_ACCESS_TOKEN:
+            self.platforms['facebook'] = {
+                'token': Config.FACEBOOK_ACCESS_TOKEN,
+                'page_id': Config.FACEBOOK_PAGE_ID
+            }
+            print("✓ Facebook connected")
+        else:
+            print("ℹ️  Facebook not configured (no credentials)")
     
     def create_post(self, title, content, url):
         """Create a post object with platform-specific formatting"""
@@ -45,11 +55,19 @@ class SocialMediaPoster:
         """Post to Twitter/X with 280 character limit using v2 API"""
         try:
             # Format for Twitter
-            tweet = f"{post['title']}\n\n{post['content'][:200]}...\n\n{post['url']}"
+            if post['title'] and post['url']:
+                tweet = f"{post['title']}\n\n{post['content'][:200]}...\n\n{post['url']}"
+            elif post['content'] and post['url']:
+                tweet = f"{post['content']}\n\n{post['url']}"
+            else:
+                tweet = post['content']  # For expert short posts
             
             # Ensure under 280 characters
             if len(tweet) > 280:
-                tweet = f"{post['title'][:100]}...\n\n{post['url']}"
+                if post['url']:
+                    tweet = f"{post['title'][:100]}...\n\n{post['url']}"
+                else:
+                    tweet = tweet[:280]
             
             # Post tweet using v2 API
             response = self.platforms['twitter'].create_tweet(text=tweet)
@@ -74,7 +92,12 @@ class SocialMediaPoster:
             }
             
             # Format content for LinkedIn
-            linkedin_text = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+            if post['title'] and post['url']:
+                linkedin_text = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+            elif post['content']:
+                linkedin_text = post['content']
+            else:
+                linkedin_text = post['title'] if post['title'] else ""
             
             # LinkedIn API payload
             data = {
@@ -107,6 +130,40 @@ class SocialMediaPoster:
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
+    def post_to_facebook(self, post):
+        """Post to Facebook Page"""
+        try:
+            # Format content for Facebook
+            if post['title'] and post['url']:
+                message = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+            elif post['content']:
+                message = post['content']
+            else:
+                message = post['title'] if post['title'] else ""
+            
+            # Facebook Graph API endpoint
+            url = f"https://graph.facebook.com/v18.0/{self.platforms['facebook']['page_id']}/feed"
+            
+            params = {
+                'message': message,
+                'access_token': self.platforms['facebook']['token']
+            }
+            
+            # If there's a URL, add it as a link
+            if post.get('url'):
+                params['link'] = post['url']
+            
+            response = requests.post(url, data=params)
+            
+            if response.status_code == 200:
+                result = response.json()
+                return {'success': True, 'id': result.get('id')}
+            else:
+                return {'success': False, 'error': response.text}
+                
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
     def post_to_all(self, title, content, url):
         """Post to all configured platforms"""
         post = self.create_post(title, content, url)
@@ -118,27 +175,30 @@ class SocialMediaPoster:
         if 'linkedin' in self.platforms:
             results['linkedin'] = self.post_to_linkedin(post)
         
+        if 'facebook' in self.platforms:
+            results['facebook'] = self.post_to_facebook(post)
+        
         return results
     
-    def post_short_content(self, content):
-    """Post short-form content optimized for engagement"""
-    results = {}
+    def get_enabled_platforms(self):
+        """Return list of enabled platforms"""
+        return list(self.platforms.keys())
     
-    # Twitter - posts as-is
-    if 'twitter' in self.platforms:
-        try:
-            response = self.platforms['twitter'].create_tweet(text=content)
-            tweet_id = response.data['id'] if response.data else None
-            results['twitter'] = {'success': True, 'id': tweet_id}
-        except Exception as e:
-            results['twitter'] = {'success': False, 'error': str(e)}
-    
-    # LinkedIn - same content works
-    if 'linkedin' in self.platforms:
-        results['linkedin'] = self.post_to_linkedin({
-            'title': '',
-            'content': content,
-            'url': ''
-        })
-    
-    return results
+    def post_short_content(self, content, platforms=None):
+        """Post short-form content to specific platforms or all"""
+        if platforms is None:
+            platforms = self.get_enabled_platforms()
+        
+        post = self.create_post("", content, "")
+        results = {}
+        
+        if 'twitter' in platforms and 'twitter' in self.platforms:
+            results['twitter'] = self.post_to_twitter(post)
+        
+        if 'linkedin' in platforms and 'linkedin' in self.platforms:
+            results['linkedin'] = self.post_to_linkedin(post)
+        
+        if 'facebook' in platforms and 'facebook' in self.platforms:
+            results['facebook'] = self.post_to_facebook(post)
+        
+        return results

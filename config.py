@@ -1,3 +1,4 @@
+# config.py
 import os
 from dotenv import load_dotenv
 
@@ -11,6 +12,10 @@ class Config:
     TWITTER_ACCESS_SECRET = os.environ.get('TWITTER_ACCESS_SECRET')
     TWITTER_BEARER_TOKEN = os.environ.get('TWITTER_BEARER_TOKEN')
     
-    # LinkedIn API credentials (even if empty for now)
+    # LinkedIn API credentials
     LINKEDIN_ACCESS_TOKEN = os.environ.get('LINKEDIN_ACCESS_TOKEN')
     LINKEDIN_USER_ID = os.environ.get('LINKEDIN_USER_ID')
+    
+    # Facebook API credentials
+    FACEBOOK_PAGE_ID = os.environ.get('FACEBOOK_PAGE_ID')
+    FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
