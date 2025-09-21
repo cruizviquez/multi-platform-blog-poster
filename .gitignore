@@ -206,3 +206,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 .env
+*.pyc
+__pycache__/
+post_history*.json
+published_articles.json
+*.log

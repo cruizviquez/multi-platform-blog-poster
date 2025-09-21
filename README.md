@@ -1,164 +1,152 @@
 # Multi-Platform Blog Poster
 
-Automate your blog content distribution across multiple social media platforms with a single tool. Write once, publish everywhere.
+Automated content distribution system for blog posts and AI/ML expert insights across social media platforms with SEO optimization.
 
-## ✨ Features
+## 🚀 Features
 
-- 📝 Post to multiple platforms simultaneously
-- 📅 Schedule posts in advance
-- 📊 Track post performance
-- 🔄 Content queue management
-- 🛡️ Platform API rate limit handling
+- **Multi-Platform Posting**: Twitter/X, LinkedIn, Facebook (Medium & Dev.to coming)
+- **AI Content Generation**: Blog posts and expert insights using Groq AI
+- **SEO Amplification**: Convert short posts into full articles
+- **Flexible Scheduling**: Post at intervals or specific times
+- **Duplicate Prevention**: Track posting history
 
-## 🚀 Quick Start
+## 📦 Quick Start
 
-### Using GitHub Codespaces
+1. **Clone & Install**
 
-1. Click the green "Code" button above
-2. Select "Create codespace on main"
-3. Wait for the environment to load
-4. Run the setup commands below
-
-### Local Development
-
-# Clone the repository
-git clone https://github.com/yourusername/multi-platform-blog-poster.git
+git clone https://github.com/cruizviquez/multi-platform-blog-poster.git
 cd multi-platform-blog-poster
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 
-# Set up environment variables
+2.- ** Configure (use .env for local testing or GitHub Secrets for Codespaces)**:
 cp .env.example .env
-# Edit .env with your API credentials
-
-### ⚙️ Configuration
-
-    Copy .env.example to .env
-    Add your API credentials:
-
-env
-
-# Twitter/X
-TWITTER_API_KEY=your_key_here
-TWITTER_API_SECRET=your_secret_here
-TWITTER_ACCESS_TOKEN=your_token_here
-TWITTER_ACCESS_SECRET=your_token_secret_here
-
-# Add other platforms as needed
-
-📖 Usage
-Basic Usage
-
-python
-
-from social_poster import SocialMediaPoster
-
-poster = SocialMediaPoster()
-results = poster.post_to_all(
-    title="My New Blog Post",
-    content="Check out my latest article about Python...",
-    url="https://myblog.com/new-post"
-)
-
-Scheduled Posting
-
-bash
-
-# Run the scheduler
-python scheduler.py
-
-Content Queue
-
-Add posts to content_queue.json:
-
-json
-
-[
-    {
-        "title": "Blog Post Title",
-        "content": "Post description...",
-        "url": "https://yourblog.com/post"
-    }
-]
-
-🔧 Supported Platforms
-
-    ✅ Twitter/X
-    🔄 LinkedIn (coming soon)
-    🔄 Facebook Pages (coming soon)
-    🔄 Instagram (coming soon)
-    🔄 Mastodon (coming soon)
-
-📁 Project Structure
-
-text
-
-multi-platform-blog-poster/
-├── .env.example          # Environment variables template
-├── requirements.txt      # Python dependencies
-├── config.py            # Configuration management
-├── social_poster.py     # Main posting logic
-├── scheduler.py         # Post scheduling
-├── main.py             # Entry point
-├── content_queue.json   # Scheduled posts
-└── logs/               # Posting logs
-
-### 🤝 Contributing
-
-    Fork the repository
-    Create your feature branch (git checkout -b feature/amazing-feature)
-    Commit your changes (git commit -m 'Add amazing feature')
-    Push to the branch (git push origin feature/amazing-feature)
-    Open a Pull Request
-
-### ⚠️ Important Notes
-
-    Always respect platform API rate limits
-    Follow each platform's terms of service
-    Use responsibly - avoid spam
-    Keep your API credentials secure
-
-### 📝 License
-
-MIT License - see LICENSE file for details
-
-### 🆘 Support
-
-    Create an issue for bug reports
-    Check existing issues before creating new ones
-    Star ⭐ the repo if you find it helpful!
-
-Built with ❤️ for content creators who value their time (By. Dr. Carlos Ruiz Viquez)
-
-text
 
 
-### **.env.example:**
-```env
-# Twitter/X API Credentials
-TWITTER_API_KEY=
-TWITTER_API_SECRET=
-TWITTER_ACCESS_TOKEN=
-TWITTER_ACCESS_SECRET=
+# Add your API credentials
 
-# LinkedIn API Credentials
-LINKEDIN_ACCESS_TOKEN=
+3.-  ** Generate Content: **
 
-# Facebook API Credentials
-FACEBOOK_PAGE_ID=
-FACEBOOK_ACCESS_TOKEN=
+# Generate expert posts
+python expert_content_generator.py
 
-# Posting Schedule (24-hour format)
-POST_TIMES=09:00,15:00,19:00
+# Preview without saving
+python expert_content_generator.py preview
 
-# Timezone
-TIMEZONE=UTC
+# Generate a week of content
+python expert_content_generator.py week
+
+4.-  **  Post Content: **
+
+# Post from queue
+python main.py
+
+# Post every 30 minutes
+python simple_interval_poster.py
+
+# Post every hour
+python simple_interval_poster.py 60
+
+5.-   ** SEO Amplification: **
 
 
+# Expand posts to articles (when configured)
+python seo_amplifier.py
+
+📁 File Structure
+
+    config.py - API credentials management
+    social_poster.py - Core posting logic for all platforms
+    expert_content_generator.py - Generates 250-char expert posts
+    simple_interval_poster.py - Posts at regular intervals
+    seo_amplifier.py - Expands posts for Medium/Dev.to
+    main.py - Posts from content_queue.json
+    generate_content.py - Content generation wrapper
+
+🔑 Required API Keys
+
+Add to GitHub Secrets (for Codespaces) or .env (for local):
+Social Platforms
+
+    TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET
+    LINKEDIN_ACCESS_TOKEN, LINKEDIN_USER_ID
+    FACEBOOK_PAGE_ID, FACEBOOK_ACCESS_TOKEN (optional)
+
+AI Generation
+
+    GROQ_API_KEY
+
+SEO Platforms (optional)
+
+    DEVTO_API_KEY
+    MEDIUM_ACCESS_TOKEN, MEDIUM_USER_ID
+
+📊 Usage Examples
+Generate and Post Expert Content
 
 
+# Generate 6 expert posts + 1 thread
+python expert_content_generator.py
+
+# Post every 30 minutes
+python simple_interval_poster.py 30
+
+Generate Blog Content
+
+# Generate from topics
+python generate_content.py
+
+# Post to all platforms
+python main.py
+
+Check Status
+
+# View expert queue
+cat expert_queue.json | python -m json.tool | head -20
+
+# View content queue
+cat content_queue.json | python -m json.tool
+
+⚙️ Configuration
+Posting Frequency
+
+Edit simple_interval_poster.py:
+
+    Default: 30 minutes
+    Pass custom interval: python simple_interval_poster.py 15
+
+Content Topics
+
+Edit in expert_content_generator.py:
+
+    self.topics - AI/ML topics
+    self.content_types - Post formats
+
+Platform Selection
+
+Configure in social_poster.py _setup_platforms() method
+🚀 Running in Background
+Using nohup:
+
+nohup python simple_interval_poster.py > posting.log 2>&1 &
+
+Using screen:
+screen -S poster
+python simple_interval_poster.py
+
+# Ctrl+A then D to detach
+
+🛠️ Troubleshooting
+
+    ModuleNotFoundError: Install requirements: pip install -r requirements.txt
+    API Errors: Check credentials in GitHub Secrets
+    Duplicate Posts: Twitter doesn't allow identical posts - content varies automatically
+
+📈 Coming Soon
+
+Medium & Dev.to integration
+Analytics dashboard
+Web interface
+
+    More platform support
+
+Created by Dr. Carlos Ruiz Viquez 
