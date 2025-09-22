@@ -1,0 +1,80 @@
+[
+  {
+    "content": "Myth: Federated learning is only suitable for simple machine learning models.\nReality: Federated learning can be effortlessly adapted to support complex neural networks with tens of billions of parameters, making it a game-changer for collaborativ...",
+    "type": "myth_buster",
+    "topic": "federated learning",
+    "hash": "a01d7d89fc94a77258c3689709d4f0b8",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:24.932989",
+    "queue_position": 1,
+    "added_to_queue": "2025-09-22T04:14:30.985848"
+  },
+  {
+    "content": "As the MLOps landscape evolves, expect a significant shift from solely focus on model deployment to integrating explainability, fairness, and transparency at the model development stage. Trustworthy AI is the future of MLOps.",
+    "type": "thought_leader",
+    "topic": "MLOps",
+    "hash": "c51a73811f4bf4cde7315701a1acc35b",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:25.853509",
+    "queue_position": 2,
+    "added_to_queue": "2025-09-22T04:14:30.985860"
+  },
+  {
+    "content": "Can AI systems that optimize for human emotional intelligence outperform those focused solely on efficiency, leading to a new paradigm of productivity?",
+    "type": "question",
+    "topic": "AI efficiency",
+    "hash": "1b5b36ee3b2ee4673fe5add6974dbe20",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:26.738577",
+    "queue_position": 3,
+    "added_to_queue": "2025-09-22T04:14:30.985862"
+  },
+  {
+    "content": "**Transformers in Medical Diagnosis: A Breakthrough at the University of California, San Francisco (UCSF)**\n\nResearchers at UCSF leveraged the transformer architecture to develop a model that predicts patient outcomes of sepsis, a life-threatening...",
+    "type": "case_study",
+    "topic": "transformers",
+    "hash": "256d97fbfb16df2f072753bac0555ed1",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:27.816507",
+    "queue_position": 4,
+    "added_to_queue": "2025-09-22T04:14:30.985865"
+  },
+  {
+    "content": "\ud83d\udcda Research has shown that AI-generated advertisements incorporating personality traits can increase consumer engagement by 25%. However, this approach also raises concerns about the potential for insincerity and authenticity issues, highlighting t...",
+    "type": "paper_insight",
+    "topic": "AI in Adverstisement",
+    "hash": "1b49fb4719a6159510a3c75585d50658",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:28.726488",
+    "queue_position": 5,
+    "added_to_queue": "2025-09-22T04:14:30.985867"
+  },
+  {
+    "content": "AI Justice Rocket \ud83d\ude80: Researchers have developed an explainable AI system that identifies biased policing algorithms, leading to 90% reduction in discriminatory arrests. AI can now help right societal wrongs!",
+    "type": "breakthrough",
+    "topic": "AI ethics",
+    "hash": "174dbcbe17493fa2f85fd71dd47221c2",
+    "platform_suitable": [
+      "twitter",
+      "linkedin"
+    ],
+    "generated_at": "2025-09-22T04:14:29.652580",
+    "queue_position": 6,
+    "added_to_queue": "2025-09-22T04:14:30.985869"
+  }
+]

@@ -1,15 +1,39 @@
-import time
-import json
-from datetime import datetime
-from core.social_poster import SocialMediaPoster
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import tweepy
+import requests
+from datetime import datetime
+import json
+from config import Config  # Now it can find config.py in root
+import time
+
+
+from core.social_poster import SocialMediaPoster
 def load_expert_queue():
     """Load posts from expert queue"""
-    try:
-        with open('expert_queue.json', 'r') as f:
-            return json.load(f)
-    except:
-        return []
+    import os
+    
+    # Try multiple locations
+    possible_paths = [
+        'expert_queue.json',
+        'core/expert_queue.json',
+        os.path.join(os.path.dirname(__file__), '..', 'core', 'expert_queue.json')
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    queue = json.load(f)
+                    print(f"✅ Loaded {len(queue)} posts from {path}")
+                    return queue
+            except Exception as e:
+                print(f"❌ Error reading {path}: {e}")
+    
+    print("❌ No expert_queue.json found in any expected location")
+    return []
 
 def save_expert_queue(queue):
     """Save updated queue"""

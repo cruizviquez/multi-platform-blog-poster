@@ -160,7 +160,7 @@ class ExpertContentGenerator:
             )
             
             content = response.choices[0].message.content.strip()
-            
+            content = content.strip('"\'') 
             # Ensure it's under 250 characters
             if len(content) > 250:
                 content = content[:247] + "..."
