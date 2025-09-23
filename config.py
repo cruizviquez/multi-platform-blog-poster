@@ -45,3 +45,7 @@ class Config:
     # Quora (uses Selenium - more complex)
     QUORA_EMAIL = os.environ.get('QUORA_EMAIL')
     QUORA_PASSWORD = os.environ.get('QUORA_PASSWORD')
+
+    # Mastodon
+    MASTODON_ACCESS_TOKEN = os.environ.get('MASTODON_ACCESS_TOKEN')
+    MASTODON_INSTANCE_URL = os.environ.get('MASTODON_INSTANCE_URL', 'https://mastodon.social')

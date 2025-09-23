@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 from config import Config
 import os
+from mastodon import Mastodon
 
 class SocialMediaPoster:
     def __init__(self):
@@ -13,6 +14,17 @@ class SocialMediaPoster:
         self._setup_platforms()
     
     def _setup_platforms(self):
+        # Setup Mastodon
+        if hasattr(Config, 'MASTODON_ACCESS_TOKEN') and Config.MASTODON_ACCESS_TOKEN:
+            try:
+                self.platforms['mastodon'] = Mastodon(
+                access_token=Config.MASTODON_ACCESS_TOKEN,
+                api_base_url=Config.MASTODON_INSTANCE_URL
+            )
+                print("✓ Mastodon connected")
+            except Exception as e:
+                print(f"✗ Mastodon connection failed: {e}")
+
         # Setup Twitter/X with v2 API
         try:
             self.platforms['twitter'] = tweepy.Client(
@@ -131,6 +143,35 @@ class SocialMediaPoster:
         except Exception as e:
             print(f"⚠️  Expansion failed, using original: {e}")
             return post['content']
+        
+
+    def post_to_mastodon(self, post):
+        """Post to Mastodon"""
+        try:
+            # Mastodon has 500 character limit (much better than Twitter!)
+            if post['title'] and post['url']:
+                content = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+            else:
+                content = post['content'].strip('"\'')
+        
+             # Ensure under 500 characters
+            if len(content) > 500:
+                content = content[:497] + "..."
+        
+            # Post to Mastodon
+            status = self.platforms['mastodon'].status_post(
+                content,
+                visibility='public'  # or 'unlisted', 'private', 'direct'
+            )
+        
+            return {
+                'success': True, 
+                'id': status['id'],
+                'url': status['url']
+            }
+        
+        except Exception as e:
+            return {'success': False, 'error': str(e)}    
     
     def post_to_twitter(self, post):
         """Post to Twitter/X with 280 character limit using v2 API"""
@@ -394,6 +435,8 @@ class SocialMediaPoster:
         if 'reddit' in self.platforms:
             results['reddit'] = self.post_to_reddit(post)
         
+        if 'mastodon' in self.platforms:
+            results['mastodon'] = self.post_to_mastodon(post)
         return results
     
     def get_enabled_platforms(self):

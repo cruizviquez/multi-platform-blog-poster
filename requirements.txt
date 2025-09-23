@@ -5,3 +5,4 @@ schedule==1.2.0
 groq
 praw==7.7.1  # Reddit API
 medium==0.3.0  # Medium API (unofficial)
+Mastodon.py==1.8.1
