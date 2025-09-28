@@ -8,14 +8,16 @@ from config import Config
 import os
 from mastodon import Mastodon
 
+
 class SocialMediaPoster:
     def __init__(self):
         self.platforms = {}
         self._setup_platforms()
-    
+
     def _setup_platforms(self):
         # Setup Mastodon
-        if hasattr(Config, 'MASTODON_ACCESS_TOKEN') and Config.MASTODON_ACCESS_TOKEN:
+        if hasattr(
+            Config, 'MASTODON_ACCESS_TOKEN') and Config.MASTODON_ACCESS_TOKEN:
             try:
                 self.platforms['mastodon'] = Mastodon(
                 access_token=Config.MASTODON_ACCESS_TOKEN,
@@ -36,9 +38,10 @@ class SocialMediaPoster:
             print("✓ Twitter connected (v2 API)")
         except Exception as e:
             print(f"✗ Twitter connection failed: {e}")
-        
+
         # Setup LinkedIn
-        if hasattr(Config, 'LINKEDIN_ACCESS_TOKEN') and Config.LINKEDIN_ACCESS_TOKEN:
+        if hasattr(
+            Config, 'LINKEDIN_ACCESS_TOKEN') and Config.LINKEDIN_ACCESS_TOKEN:
             self.platforms['linkedin'] = {
                 'token': Config.LINKEDIN_ACCESS_TOKEN,
                 'user_id': Config.LINKEDIN_USER_ID
@@ -46,9 +49,10 @@ class SocialMediaPoster:
             print("✓ LinkedIn connected")
         else:
             print("ℹ️  LinkedIn not configured (no credentials)")
-        
+
         # Setup Facebook
-        if hasattr(Config, 'FACEBOOK_ACCESS_TOKEN') and Config.FACEBOOK_ACCESS_TOKEN:
+        if hasattr(
+            Config, 'FACEBOOK_ACCESS_TOKEN') and Config.FACEBOOK_ACCESS_TOKEN:
             self.platforms['facebook'] = {
                 'token': Config.FACEBOOK_ACCESS_TOKEN,
                 'page_id': Config.FACEBOOK_PAGE_ID
@@ -56,7 +60,7 @@ class SocialMediaPoster:
             print("✓ Facebook connected")
         else:
             print("ℹ️  Facebook not configured (no credentials)")
-        
+
         # Setup Dev.to
         if hasattr(Config, 'DEVTO_API_KEY') and Config.DEVTO_API_KEY:
             self.platforms['devto'] = {
@@ -65,7 +69,7 @@ class SocialMediaPoster:
             print("✓ Dev.to connected")
         else:
             print("ℹ️  Dev.to not configured")
-        
+
         # Setup Medium
         if hasattr(Config, 'MEDIUM_ACCESS_TOKEN') and Config.MEDIUM_ACCESS_TOKEN:
             self.platforms['medium'] = {
@@ -75,7 +79,7 @@ class SocialMediaPoster:
             print("✓ Medium connected")
         else:
             print("ℹ️  Medium not configured")
-        
+
         # Setup Reddit
         if hasattr(Config, 'REDDIT_CLIENT_ID') and Config.REDDIT_CLIENT_ID:
             try:
@@ -89,7 +93,7 @@ class SocialMediaPoster:
                 print("✓ Reddit connected")
             except Exception as e:
                 print(f"✗ Reddit connection failed: {e}")
-    
+
     def create_post(self, title, content, url):
         """Create a post object with platform-specific formatting"""
         return {
@@ -98,22 +102,23 @@ class SocialMediaPoster:
             'url': url,
             'timestamp': datetime.now().isoformat()
         }
-    
+
     def expand_content_for_platform(self, post, platform):
         """Expand short content to longer form for certain platforms"""
         if platform in ['twitter', 'facebook']:
             # Keep short for Twitter/Facebook
             return post['content']
-        
+
         # For platforms that support longer content
         if not hasattr(self, 'groq_client'):
             # Initialize Groq for content expansion
             from groq import Groq
             # Remove proxy issues
-            for proxy_var in ['http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'proxies']:
+            for proxy_var in ['http_proxy', 'https_proxy',
+                'HTTP_PROXY', 'HTTPS_PROXY', 'proxies']:
                 os.environ.pop(proxy_var, None)
             self.groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-        
+
         try:
             # Expand content using AI
             response = self.groq_client.chat.completions.create(
@@ -131,48 +136,58 @@ class SocialMediaPoster:
                 temperature=0.7,
                 max_tokens=300
             )
-            
+
             expanded = response.choices[0].message.content.strip()
-            
+
             # Ensure it's not too long
             if len(expanded) > 1000:
                 expanded = expanded[:997] + "..."
-            
+
             return expanded
-            
+
         except Exception as e:
             print(f"⚠️  Expansion failed, using original: {e}")
             return post['content']
-        
 
     def post_to_mastodon(self, post):
         """Post to Mastodon"""
         try:
-            # Mastodon has 500 character limit (much better than Twitter!)
+            # For Mastodon, we need to respect 500 char limit but make it complete
             if post['title'] and post['url']:
-                content = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+                # Calculate space for each part
+                url_len = len(post['url']) + 4  # URL + newlines
+                title_len = len(post['title']) + 4  # Title + newlines
+                available = 500 - url_len - title_len - 10  # Leave some buffer
+                
+                # Truncate content if needed
+                if len(post['content']) > available:
+                    content = post['content'][:available-3] + "..."
+                else:
+                    content = post['content']
+                
+                mastodon_text = f"{post['title']}\n\n{content}\n\n{post['url']}"
             else:
+                # For short expert posts
                 content = post['content'].strip('"\'')
-        
-             # Ensure under 500 characters
-            if len(content) > 500:
-                content = content[:497] + "..."
-        
+                if len(content) > 500:
+                    content = content[:497] + "..."
+                mastodon_text = content
+            
             # Post to Mastodon
             status = self.platforms['mastodon'].status_post(
-                content,
-                visibility='public'  # or 'unlisted', 'private', 'direct'
+                mastodon_text,
+                visibility='public'
             )
-        
+            
             return {
                 'success': True, 
                 'id': status['id'],
                 'url': status['url']
             }
-        
+            
         except Exception as e:
-            return {'success': False, 'error': str(e)}    
-    
+            return {'success': False, 'error': str(e)}
+
     def post_to_twitter(self, post):
         """Post to Twitter/X with 280 character limit using v2 API"""
         try:
@@ -182,28 +197,29 @@ class SocialMediaPoster:
             elif post['content'] and post['url']:
                 tweet = f"{post['content']}\n\n{post['url']}"
             else:
-                tweet = post['content'].strip('"\'')  # Remove quotes for expert posts
-            
+                # Remove quotes for expert posts
+                tweet = post['content'].strip('"\'')
+
             # Ensure under 280 characters
             if len(tweet) > 280:
                 if post['url']:
                     tweet = f"{post['title'][:100]}...\n\n{post['url']}"
                 else:
                     tweet = tweet[:280]
-            
+
             # Post tweet using v2 API
             response = self.platforms['twitter'].create_tweet(text=tweet)
-            
+
             # Extract tweet ID from response
             tweet_id = response.data['id'] if response.data else None
-            
+
             return {'success': True, 'id': tweet_id, 'text': tweet}
-        
+
         except tweepy.TweepyException as e:
             return {'success': False, 'error': str(e)}
         except Exception as e:
             return {'success': False, 'error': f"Unexpected error: {str(e)}"}
-    
+
     def post_to_linkedin(self, post):
         """Post to LinkedIn"""
         try:
@@ -213,13 +229,17 @@ class SocialMediaPoster:
                 'X-Restli-Protocol-Version': '2.0.0'
             }
             
-            # Format content for LinkedIn
-            if post['title'] and post['url']:
-                linkedin_text = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
-            elif post['content']:
-                linkedin_text = post['content'].strip('"\'')  # Remove quotes
+            # LinkedIn allows long posts - use expanded content
+            if post.get('content'):
+                # For expert posts, expand them for LinkedIn
+                expanded = self.expand_content_for_platform(post, 'linkedin')
+                linkedin_text = expanded
             else:
-                linkedin_text = post['title'] if post['title'] else ""
+                # For regular posts
+                linkedin_text = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+            
+            # Remove quotes
+            linkedin_text = linkedin_text.strip('"\'')
             
             # LinkedIn API payload
             data = {
@@ -228,7 +248,7 @@ class SocialMediaPoster:
                 "specificContent": {
                     "com.linkedin.ugc.ShareContent": {
                         "shareCommentary": {
-                            "text": linkedin_text
+                            "text": linkedin_text  # No truncation needed for LinkedIn
                         },
                         "shareMediaCategory": "NONE"
                     }
@@ -251,41 +271,46 @@ class SocialMediaPoster:
                 
         except Exception as e:
             return {'success': False, 'error': str(e)}
-    
+
+
     def post_to_facebook(self, post):
         """Post to Facebook Page"""
         try:
             # Format content for Facebook
             if post['title'] and post['url']:
-                message = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
+                message = f"{
+    post['title']}\n\n{
+        post['content']}\n\n{
+            post['url']}"
             elif post['content']:
                 message = post['content'].strip('"\'')  # Remove quotes
             else:
                 message = post['title'] if post['title'] else ""
-            
+
             # Facebook Graph API endpoint
-            url = f"https://graph.facebook.com/v18.0/{self.platforms['facebook']['page_id']}/feed"
-            
+            url = f"https://graph.facebook.com/v18.0/{
+    self.platforms['facebook']['page_id']}/feed"
+
             params = {
                 'message': message,
                 'access_token': self.platforms['facebook']['token']
             }
-            
+
             # If there's a URL, add it as a link
             if post.get('url'):
                 params['link'] = post['url']
-            
+
             response = requests.post(url, data=params)
-            
+
             if response.status_code == 200:
                 result = response.json()
                 return {'success': True, 'id': result.get('id')}
             else:
                 return {'success': False, 'error': response.text}
-                
+
         except Exception as e:
             return {'success': False, 'error': str(e)}
-    
+
     def post_to_devto(self, post):
         """Post to Dev.to as an article"""
         try:
@@ -293,10 +318,10 @@ class SocialMediaPoster:
                 'api-key': self.platforms['devto']['api_key'],
                 'Content-Type': 'application/json'
             }
-            
+
             # Expand content for Dev.to
             expanded_content = self.expand_content_for_platform(post, 'devto')
-            
+
             # Create a title from the first part of content
             title = post.get('title', '')
             if not title:
@@ -305,7 +330,7 @@ class SocialMediaPoster:
                 if '.' in title:
                     title = title.split('.')[0]
                 title = title.strip('.,!?')
-            
+
             # Format as article
             article_content = f"""
 {expanded_content}
@@ -314,7 +339,7 @@ class SocialMediaPoster:
 
 *This post was originally shared as an AI/ML insight. Follow me for more expert content on artificial intelligence and machine learning.*
 """
-            
+
             article_data = {
                 'article': {
                     'title': title,
@@ -323,22 +348,23 @@ class SocialMediaPoster:
                     'published': True
                 }
             }
-            
+
             response = requests.post(
                 'https://dev.to/api/articles',
                 headers=headers,
                 json=article_data
             )
-            
+
             if response.status_code == 201:
                 result = response.json()
-                return {'success': True, 'id': result['id'], 'url': result['url']}
+                return {'success': True,
+                    'id': result['id'], 'url': result['url']}
             else:
                 return {'success': False, 'error': response.text}
-                
+
         except Exception as e:
             return {'success': False, 'error': str(e)}
-    
+
     def post_to_medium(self, post):
         """Post to Medium"""
         try:
@@ -347,13 +373,13 @@ class SocialMediaPoster:
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
-            
+
             # Expand content for Medium
             expanded_content = self.expand_content_for_platform(post, 'medium')
-            
+
             # Generate title
             title = post.get('title', expanded_content[:60] + '...')
-            
+
             # Format for Medium
             content_html = f"""
 <h1>{title}</h1>
@@ -361,7 +387,7 @@ class SocialMediaPoster:
 <hr>
 <p><em>Follow me for more AI/ML insights and tutorials.</em></p>
 """
-            
+
             article_data = {
                 'title': title,
                 'contentFormat': 'html',
@@ -369,46 +395,115 @@ class SocialMediaPoster:
                 'tags': ['artificial-intelligence', 'machine-learning', 'technology'],
                 'publishStatus': 'public'
             }
-            
+
             response = requests.post(
-                f'https://api.medium.com/v1/users/{self.platforms["medium"]["user_id"]}/posts',
+                f'https://api.medium.com/v1/users/{
+    self.platforms["medium"]["user_id"]}/posts',
                 headers=headers,
                 json=article_data
             )
-            
+
             if response.status_code == 201:
                 result = response.json()
-                return {'success': True, 'id': result['data']['id'], 'url': result['data']['url']}
+                return {'success': True,
+                    'id': result['data']['id'], 'url': result['data']['url']}
             else:
                 return {'success': False, 'error': response.text}
-                
+
         except Exception as e:
             return {'success': False, 'error': str(e)}
-    
-    def post_to_reddit(self, post, subreddit='MachineLearning'):
+        
+    def post_to_reddit(self, post, subreddit=None):
         """Post to Reddit"""
         try:
             reddit = self.platforms['reddit']
             
-            # Expand content for Reddit
+            # Subreddits that only allow links (no text posts)
+            LINK_ONLY_SUBS = ['todayilearned', 'technology', 'science']
+            
+            # Subreddits that allow text posts
+            TEXT_ALLOWED_SUBS = ['unpopularopinion', 'test', 'AskReddit', 
+                                'testingground4bots', 'self', 'discussion']
+            
+            # Determine subreddit
+            if not subreddit:
+                content_type = post.get('type', 'default')
+                # Use text-allowed subreddits for our posts
+                if content_type in ['unpopularopinion', 'hot_take', 'prediction']:
+                    subreddit = 'unpopularopinion'
+                elif content_type in ['code_snippet', 'challenge']:
+                    subreddit = 'test'  # dailyprogrammer might need specific format
+                else:
+                    subreddit = 'test'  # Safe default that allows text
+            
+            print(f"📮 Posting to r/{subreddit}")
+            
+            sub = reddit.subreddit(subreddit)
+            
+            # Expand content
             expanded_content = self.expand_content_for_platform(post, 'reddit')
             
-            # Generate title (Reddit needs good titles)
+            # Generate title
             title = post.get('title', '')
             if not title:
-                # Extract key point from content
-                title = f"[D] {expanded_content[:100]}..."
+                title = post['content'][:100].strip()
+                if '.' in title:
+                    title = title.split('.')[0]
             
-            # Post to subreddit
-            submission = reddit.subreddit(subreddit).submit(
-                title=title,
-                selftext=expanded_content + "\n\n---\n\nWhat are your thoughts on this?"
-            )
+            # Apply subreddit-specific rules
+            if subreddit == 'unpopularopinion':
+                if not any(word in title.lower() for word in ['should', 'better', 'worse', 'think']):
+                    title = f"{title} is overrated"  # Make it an opinion
             
-            return {'success': True, 'id': submission.id, 'url': submission.url}
+            # Check if subreddit allows text posts
+            if subreddit in LINK_ONLY_SUBS:
+                # For link-only subs, need to provide a URL
+                url = post.get('url', 'https://github.com/cruizviquez/multi-platform-blog-poster')
+                submission = sub.submit(
+                    title=title[:300],
+                    url=url
+                )
+            else:
+                # Text post
+                submission = sub.submit(
+                    title=title[:300],
+                    selftext=expanded_content
+                )
+            
+            print(f"✅ Posted to r/{subreddit}: {submission.url}")
+            
+            return {
+                'success': True,
+                'id': submission.id,
+                'url': submission.url,
+                'subreddit': subreddit
+            }
+            
+        except praw.exceptions.RedditAPIException as e:
+            error_msg = str(e)
+            if "NO_SELFS" in error_msg or "BODY_NOT_ALLOWED" in error_msg:
+                print(f"❌ r/{subreddit} doesn't allow text posts")
+            return {'success': False, 'error': error_msg}
             
         except Exception as e:
             return {'success': False, 'error': str(e)}
+    
+    
+    
+       
+    def get_reddit_subreddit_rotation(self, content_type):
+        """Rotate through subreddits to avoid spamming"""
+        import random
+    
+        # Get primary subreddit for content type
+        primary = Config.REDDIT_SUBREDDITS.get(content_type, 'artificial')
+    
+        # Sometimes use an alternative from the list
+        if random.random() < 0.3:  # 30% chance to use alternative
+            return random.choice(Config.REDDIT_SUBREDDIT_LIST)
+    
+        return primary
+
     
     def post_to_all(self, title, content, url):
         """Post to all configured platforms"""

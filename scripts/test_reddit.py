@@ -1,3 +1,4 @@
+# test_reddit.py
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,10 +22,14 @@ try:
     print(f"✅ Connected as: /u/{user.name}")
     print(f"Karma: {user.link_karma} link | {user.comment_karma} comment")
     
-    # Test posting capability
-    # Find a test subreddit
-    test_sub = reddit.subreddit('test')
-    print(f"✅ Can access r/{test_sub.display_name}")
+    # Test access to configured subreddits
+    print("\n📋 Checking configured subreddits:")
+    for content_type, sub_name in Config.REDDIT_SUBREDDITS.items():
+        try:
+            sub = reddit.subreddit(sub_name)
+            print(f"✅ r/{sub_name}: {sub.subscribers:,} subscribers")
+        except Exception as e:
+            print(f"❌ r/{sub_name}: Cannot access")
     
 except Exception as e:
     print(f"❌ Error: {e}")

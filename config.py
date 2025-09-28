@@ -35,12 +35,49 @@ class Config:
     MEDIUM_ACCESS_TOKEN = os.environ.get('MEDIUM_ACCESS_TOKEN')
     MEDIUM_USER_ID = os.environ.get('MEDIUM_USER_ID')
     
-    # Reddit
+    # Reddit API credentials
     REDDIT_CLIENT_ID = os.environ.get('REDDIT_CLIENT_ID')
     REDDIT_CLIENT_SECRET = os.environ.get('REDDIT_CLIENT_SECRET')
     REDDIT_USERNAME = os.environ.get('REDDIT_USERNAME')
     REDDIT_PASSWORD = os.environ.get('REDDIT_PASSWORD')
     REDDIT_USER_AGENT = os.environ.get('REDDIT_USER_AGENT', 'BlogPoster/1.0')
+    
+   #Better subreddit selection
+    REDDIT_SUBREDDITS = {
+    # Testing/General
+    'default': 'test',
+    
+    # AI/ML subreddits that typically allow text posts
+    'question': 'AskAI',
+    'discussion': 'singularity',
+    'breakthrough': 'Futurology',
+    'prediction': 'Futurology',
+    'tutorial': 'learnmachinelearning',
+    'case_study': 'LocalLLaMA',  # Very active, allows discussions
+    'tool_review': 'LocalLLaMA',
+    
+    # Programming
+    'code_snippet': 'learnpython',
+    'challenge': 'programmingchallenges',
+    
+    # General tech
+    'myth_buster': 'technology',
+    'hot_take': 'unpopularopinion',  # Keep this for controversial takes
+    'thought_leader': 'Futurology'
+    }
+
+    # Known good subreddits for text posts
+    REDDIT_TEXT_POST_ALLOWED = [
+    'test',
+    'AskAI',
+    'singularity', 
+    'Futurology',
+    'LocalLLaMA',
+    'learnpython',
+    'learnmachinelearning',
+    'MLQuestions'
+    ]
+   
     
     # Quora (uses Selenium - more complex)
     QUORA_EMAIL = os.environ.get('QUORA_EMAIL')
