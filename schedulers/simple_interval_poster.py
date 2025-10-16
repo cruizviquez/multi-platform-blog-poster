@@ -56,10 +56,11 @@ def post_next_expert_content():
     # Post it
     poster = SocialMediaPoster()
     
-    # For short posts, use simplified posting
+    # Only truncate for Twitter and Mastodon, pass full content for others
+    content = next_post['content']
     results = poster.post_to_all(
         title="",
-        content=next_post['content'],
+        content=content,
         url=""
     )
     

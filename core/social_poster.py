@@ -149,42 +149,46 @@ class SocialMediaPoster:
             print(f"⚠️  Expansion failed, using original: {e}")
             return post['content']
 
+    def _truncate_logical(self, text, max_length):
+        """Truncate text at last full sentence or word within max_length."""
+        if len(text) <= max_length:
+            return text
+        truncated = text[:max_length]
+        # Try to end at last period, exclamation, or question mark
+        for end in ['.', '!', '?']:
+            idx = truncated.rfind(end)
+            if idx != -1 and idx > max_length // 2:
+                return truncated[:idx+1]
+        # Otherwise, end at last space
+        idx = truncated.rfind(' ')
+        if idx != -1 and idx > max_length // 2:
+            return truncated[:idx] + '...'
+        # Fallback: hard cut
+        return truncated.rstrip() + '...'
+
     def post_to_mastodon(self, post):
         """Post to Mastodon"""
         try:
             # For Mastodon, we need to respect 500 char limit but make it complete
             if post['title'] and post['url']:
-                # Calculate space for each part
-                url_len = len(post['url']) + 4  # URL + newlines
-                title_len = len(post['title']) + 4  # Title + newlines
-                available = 500 - url_len - title_len - 10  # Leave some buffer
-                
-                # Truncate content if needed
-                if len(post['content']) > available:
-                    content = post['content'][:available-3] + "..."
-                else:
-                    content = post['content']
-                
+                url_len = len(post['url']) + 4
+                title_len = len(post['title']) + 4
+                available = 500 - url_len - title_len - 10
+                content = self._truncate_logical(post['content'], available)
                 mastodon_text = f"{post['title']}\n\n{content}\n\n{post['url']}"
             else:
-                # For short expert posts
                 content = post['content'].strip('"\'')
-                if len(content) > 500:
-                    content = content[:497] + "..."
+                content = self._truncate_logical(content, 500)
                 mastodon_text = content
-            
-            # Post to Mastodon
             status = self.platforms['mastodon'].status_post(
                 mastodon_text,
                 visibility='public'
             )
-            
             return {
-                'success': True, 
+                'success': True,
                 'id': status['id'],
                 'url': status['url']
             }
-            
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -193,24 +197,17 @@ class SocialMediaPoster:
         try:
             # Format for Twitter
             if post['title'] and post['url']:
-                tweet = f"{post['title']}\n\n{post['content'][:200]}...\n\n{post['url']}"
+                base = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
             elif post['content'] and post['url']:
-                tweet = f"{post['content']}\n\n{post['url']}"
+                base = f"{post['content']}\n\n{post['url']}"
             else:
-                # Remove quotes for expert posts
-                tweet = post['content'].strip('"\'')
+                base = post['content'].strip('"\'')
 
-            # Ensure under 280 characters
-            if len(tweet) > 280:
-                if post['url']:
-                    tweet = f"{post['title'][:100]}...\n\n{post['url']}"
-                else:
-                    tweet = tweet[:280]
+            tweet = self._truncate_logical(base, 280)
 
             # Post tweet using v2 API
             response = self.platforms['twitter'].create_tweet(text=tweet)
 
-            # Extract tweet ID from response
             tweet_id = response.data['id'] if response.data else None
 
             return {'success': True, 'id': tweet_id, 'text': tweet}
@@ -233,7 +230,7 @@ class SocialMediaPoster:
             if post.get('content'):
                 # For expert posts, expand them for LinkedIn
                 expanded = self.expand_content_for_platform(post, 'linkedin')
-                linkedin_text = expanded
+                linkedin_text = self._truncate_logical(expanded, 1300)
             else:
                 # For regular posts
                 linkedin_text = f"{post['title']}\n\n{post['content']}\n\n{post['url']}"
@@ -382,7 +379,6 @@ class SocialMediaPoster:
 
             # Format for Medium
             content_html = f"""
-<h1>{title}</h1>
 <p>{expanded_content}</p>
 <hr>
 <p><em>Follow me for more AI/ML insights and tutorials.</em></p>
